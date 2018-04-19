@@ -111,6 +111,10 @@ namespace SixLabors.ImageSharp
             {
                 return;
             }
+            if (sourceIndex < destIndex)
+            {
+                destIndex--;
+            }
 
             ImageFrame<TPixel> frameAtIndex = this.frames[sourceIndex];
             this.frames.RemoveAt(sourceIndex);
