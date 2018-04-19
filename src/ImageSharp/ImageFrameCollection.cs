@@ -107,7 +107,7 @@ namespace SixLabors.ImageSharp
         /// <inheritdoc/>
         public void MoveFrame(int sourceIndex, int destIndex)
         {
-            if (sourceIndex == destIndex)
+            if (sourceIndex == destIndex || sourceIndex == destIndex - 1)
             {
                 return;
             }
