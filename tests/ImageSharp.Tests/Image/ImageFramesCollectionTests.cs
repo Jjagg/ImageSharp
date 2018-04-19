@@ -257,17 +257,33 @@ namespace SixLabors.ImageSharp.Tests
         }
 
         [Fact]
-        public void MoveFrame_LeavesFrmaeInCorrectLocation()
+        public void MoveFrame_BackwardLeavesFrameInCorrectLocation()
         {
             for (var i = 0; i < 9; i++)
             {
                 this.image.Frames.CreateFrame();
             }
 
+            var frame = this.image.Frames[7];
+            this.image.Frames.MoveFrame(7, 4);
+            var newIndex = this.image.Frames.IndexOf(frame);
+            Assert.Equal(4, newIndex);
+        }
+
+        [Fact]
+        public void MoveFrame_ForwardLeavesFrameInCorrectLocation()
+        {
+            for (var i = 0; i < 9; i++)
+            {
+                this.image.Frames.CreateFrame();
+            }
+
+            // We expect the frame at index `destIndex - 1`
+            // see https://github.com/SixLabors/ImageSharp/issues/538 for rationale
             var frame = this.image.Frames[4];
             this.image.Frames.MoveFrame(4, 7);
             var newIndex = this.image.Frames.IndexOf(frame);
-            Assert.Equal(7, newIndex);
+            Assert.Equal(6, newIndex);
         }
 
 
