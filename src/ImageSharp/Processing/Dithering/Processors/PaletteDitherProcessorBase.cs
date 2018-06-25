@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -15,7 +16,7 @@ namespace SixLabors.ImageSharp.Processing.Dithering.Processors
     internal abstract class PaletteDitherProcessorBase<TPixel> : ImageProcessor<TPixel>
         where TPixel : struct, IPixel<TPixel>
     {
-        private readonly Dictionary<TPixel, PixelPair<TPixel>> cache = new Dictionary<TPixel, PixelPair<TPixel>>();
+        private readonly Dictionary<TPixel, TPixel> cache = new Dictionary<TPixel, TPixel>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PaletteDitherProcessorBase{TPixel}"/> class.
@@ -32,45 +33,50 @@ namespace SixLabors.ImageSharp.Processing.Dithering.Processors
         /// </summary>
         public TPixel[] Palette { get; }
 
+        /// <summary>
+        /// Returns the closest color from the palette to the given color by calculating the Euclidean distance.
+        /// </summary>
+        /// <param name="pixel">The color.</param>
+        /// <param name="colorPalette">The color palette.</param>
+        /// <returns>The closest pixel in the palette.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected PixelPair<TPixel> GetClosestPixelPair(ref TPixel pixel, TPixel[] colorPalette)
+        protected TPixel GetClosestPixel(TPixel pixel, TPixel[] colorPalette)
         {
             // Check if the color is in the lookup table
-            if (this.cache.ContainsKey(pixel))
+            if (this.cache.TryGetValue(pixel, out var result))
             {
-                return this.cache[pixel];
+                return result;
             }
 
             // Not found - loop through the palette and find the nearest match.
+            TPixel color = default;
             float leastDistance = int.MaxValue;
-            float secondLeastDistance = int.MaxValue;
             var vector = pixel.ToVector4();
 
-            TPixel closest = default;
-            TPixel secondClosest = default;
             for (int index = 0; index < colorPalette.Length; index++)
             {
-                TPixel temp = colorPalette[index];
-                float distance = Vector4.DistanceSquared(vector, temp.ToVector4());
+                TPixel tmp = colorPalette[index];
+                float distance = Vector4.Distance(vector, tmp.ToVector4());
 
-                if (distance < leastDistance)
+                // Greater... Move on.
+                if (distance >= leastDistance)
                 {
-                    leastDistance = distance;
-                    secondClosest = closest;
-                    closest = temp;
+                    continue;
                 }
-                else if (distance < secondLeastDistance)
+
+                color = tmp;
+                leastDistance = distance;
+
+                // And if it's an exact match, exit the loop
+                if (MathF.Abs(distance) < Constants.Epsilon)
                 {
-                    secondLeastDistance = distance;
-                    secondClosest = temp;
+                    break;
                 }
             }
 
-            // Pop it into the cache for next time
-            var pair = new PixelPair<TPixel>(closest, secondClosest);
-            this.cache.Add(pixel, pair);
+            this.cache.Add(pixel, color);
 
-            return pair;
+            return color;
         }
     }
 }
